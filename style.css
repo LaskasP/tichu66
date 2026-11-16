@@ -50,12 +50,12 @@ dialog{scrollbar-gutter:stable;overscroll-behavior:contain}
 
 /* Shared dropdown controls and option sheet, including iOS Safari. */
 select[hidden]{display:none!important}
-.select-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;min-height:44px;width:100%;max-width:100%;padding:10px 0;border:1px solid transparent;border-radius:0;background:transparent;text-align:left;font-size:16px;font-weight:400;line-height:1.25;overflow-wrap:anywhere}
-.select-trigger::after{content:"";flex:0 0 8px;width:8px;height:8px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:translateY(-2px) rotate(45deg);margin:0 3px 0 4px}
+.select-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;min-height:44px;width:100%;max-width:100%;padding:10px 0;border:1px solid transparent;border-radius:0;background:transparent;text-align:left;font-size:16px;font-weight:400;line-height:1.25;overflow-wrap:anywhere;-webkit-tap-highlight-color:transparent}
+.select-trigger::after{content:"";flex:0 0 14px;width:14px;height:18px;margin:0 2px 0 4px;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 18'%3E%3Cpath d='m4 7 3-3 3 3m-6 4 3 3 3-3' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;opacity:.7}
 .select-trigger:disabled{opacity:1;color:var(--muted);background:transparent;border-color:transparent}
 .select-trigger:disabled::after{visibility:hidden}
-.select-trigger:hover:enabled{background:var(--tint)}
-.select-trigger:active:enabled{background:var(--line)}
+.select-trigger:hover:enabled,.select-trigger[aria-expanded="true"]:enabled{background:transparent;color:var(--accent)}
+.select-trigger:active:enabled{background:transparent;color:var(--accent-hover)}
 .target-wrap .select-trigger{width:auto;font-size:14px}
 .bench-pick .select-trigger{width:auto;max-width:180px}
 dialog.option-picker{width:min(420px,calc(100% - 32px));max-height:calc(100% - 32px);max-height:calc(100dvh - 32px);padding:20px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink);box-shadow:0 16px 48px #202b2626;overscroll-behavior:contain}
