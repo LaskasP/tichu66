@@ -50,14 +50,13 @@ dialog{scrollbar-gutter:stable;overscroll-behavior:contain}
 
 /* Shared dropdown controls and option sheet, including iOS Safari. */
 select[hidden]{display:none!important}
-.select-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;min-height:44px;width:100%;max-width:100%;padding:9px 12px;border-radius:8px;text-align:left;font-size:16px;font-weight:400;line-height:1.5;overflow-wrap:anywhere}
+.select-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;min-height:44px;width:100%;max-width:100%;padding:10px 0;border:1px solid transparent;border-radius:0;background:transparent;text-align:left;font-size:16px;font-weight:400;line-height:1.25;overflow-wrap:anywhere}
 .select-trigger::after{content:"";flex:0 0 8px;width:8px;height:8px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:translateY(-2px) rotate(45deg);margin:0 3px 0 4px}
-.select-trigger:disabled{opacity:1;color:var(--muted);background:var(--tint);border-color:var(--line)}
+.select-trigger:disabled{opacity:1;color:var(--muted);background:transparent;border-color:transparent}
 .select-trigger:disabled::after{visibility:hidden}
-.player-picks .select-trigger,.bench-pick .select-trigger{border-color:transparent;border-radius:0;background:transparent;padding:10px 0;line-height:1.25}
-.player-picks .select-trigger:hover:enabled,.bench-pick .select-trigger:hover:enabled{background:var(--tint)}
-.player-picks .select-trigger:active:enabled,.bench-pick .select-trigger:active:enabled{background:var(--line)}
-.target-wrap .select-trigger{width:auto;font-size:14px;padding:8px 10px}
+.select-trigger:hover:enabled{background:var(--tint)}
+.select-trigger:active:enabled{background:var(--line)}
+.target-wrap .select-trigger{width:auto;font-size:14px}
 .bench-pick .select-trigger{width:auto;max-width:180px}
 dialog.option-picker{width:min(420px,calc(100% - 32px));max-height:calc(100% - 32px);max-height:calc(100dvh - 32px);padding:20px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink);box-shadow:0 16px 48px #202b2626;overscroll-behavior:contain}
 .option-picker::backdrop{background:#202b2670}
