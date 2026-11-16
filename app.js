@@ -14,6 +14,7 @@ try {
     if (old) library.sessions.push(Tichu.migrate(JSON.parse(old), 'My existing game'));
   }
 } catch { startupError = 'Saved data could not be loaded. It has been left untouched. Import your JSON backup to continue.'; }
+let freshSession = !library.sessions.length && !startupError;
 if (!library.sessions.length) library.sessions.push(Tichu.create());
 if (!library.activeId) library.activeId = library.sessions[0].id;
 let state = library.sessions.find(s => s.id === library.activeId);
@@ -24,6 +25,8 @@ let storageBlocked = Boolean(startupError);
 let editingSetup = false;
 function persist() {
   state.draft = draft();
+  // A fresh visit is not a saved game until setup or import succeeds.
+  if (freshSession) return;
   if (storageBlocked) { $('error').textContent = 'Original browser data is preserved. Export JSON before closing; local saving is unavailable until the saved data is recovered.'; return; }
   try { localStorage.setItem(key, JSON.stringify(library)); }
   catch { $('error').textContent = 'Browser storage is unavailable. Export JSON before closing.'; }
@@ -160,6 +163,7 @@ function restoreDraft() {
   scheduleScoreValidation();
 }
 function activate(s) {
+  if (freshSession) { library.sessions = [s]; freshSession = false; }
   state.draft = draft(); state = s; library.activeId = s.id; restoreDraft();
   $('error').textContent = ''; $('feedback').hidden = true; persist(); render(); showView('game');
 }
@@ -204,6 +208,7 @@ $('sessionForm').onsubmit = e => {
   }
   const s = Tichu.create({ name, players, mode: $('sessionMode').value, target: Number($('setupTarget').value) });
   if (editingSetup) {
+    freshSession = false;
     s.id = state.id; s.draft = draft(); library.sessions[library.sessions.indexOf(state)] = s; state = s; restoreDraft(); persist(); render();
   } else { library.sessions.push(s); activate(s); }
   $('sessionDialog').close(); announce(`${s.name} ${editingSetup ? 'updated' : 'created'}. Ready for the first hand.`);
@@ -229,6 +234,7 @@ async function importData(e) {
       } else if (action.trim().toLowerCase() === 'copy') { s.id = Tichu.id(); s.name = `${s.name.slice(0, 73)} (copy)`; library.sessions.push(s); activate(s); }
       else { alert('Import cancelled. Enter update or copy next time.'); return; }
     } else { library.sessions.push(s); activate(s); }
+    $('sessionDialog').close(); $('gamesDialog').close();
     announce(`${s.name} imported. Your saved match is ready to continue.`);
   } catch { alert('This JSON is not a supported Tichu game. Your current games were kept.'); }
   finally { e.target.value = ''; }
@@ -355,3 +361,4 @@ for (const id of ['scoreA', 'scoreB', 'scoreMode', 'note']) {
 }
 document.querySelectorAll('.adjustments button').forEach(button => button.addEventListener('click', persist));
 if (!startupError) persist();
+if (freshSession) openSessionSetup();

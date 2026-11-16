@@ -29,6 +29,8 @@ Serve the root folder on any static web host. For GitHub Pages: Settings → Pag
 
 ## Game data
 
+On a fresh visit, **New game** opens automatically. Create a game or use **Import JSON** in that dialog to continue a backup; successful creation or import closes the dialog. Until then, no placeholder game is saved. Returning visits resume the saved game.
+
 Use **New game** to create a named session. A session contains completed matches and the current unfinished match. Switch sessions with **Saved game**; scores and entered hand drafts stay with their session. **Edit setup** is available until the first hand is recorded. Session and player names remain editable later. Choose each match's 500/1000 target before its first hand.
 
 | Players | Mode | After a completed match | Standings |
