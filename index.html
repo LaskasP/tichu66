@@ -14,8 +14,8 @@
 <div class="hand-toolbar"><label for="scoreMode">Hand type</label><select id="scoreMode" onchange="changeScoreMode()"><option value="normal">Normal · 100 points</option><option value="doubleA">Team A double victory · 200–0</option><option value="doubleB">Team B double victory · 0–200</option><option value="manual">Manual scores</option></select></div>
 <p id="error" role="alert"></p><div class="save-row" aria-label="Save or undo hand"><button class="primary" onclick="saveRound()">Save hand <span aria-hidden="true">→</span></button><button id="undoButton" class="quiet" onclick="undo()">Undo last hand</button></div>
 <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
-<div class="bench"><span id="bench">Lineup ready</span><span class="bench-hint" id="benchHint">Teams stay together for this game</span></div>
-<div class="session-details"><p class="helper" id="sessionSummary"></p><p class="helper" id="nextLineup"></p></div>
+<div class="bench"><div class="bench-controls"><span id="bench">Lineup ready</span><span class="bench-hint" id="benchHint">Teams stay together for this game</span></div>
+<div class="session-details"><p class="helper" id="sessionSummary"></p><p class="helper" id="nextLineup"></p></div></div>
 
 <details class="note-details" id="noteDetails"><summary>Add a hand note</summary><label class="sr-only" for="note">Hand note</label><input id="note" placeholder="What happened this hand?" maxlength="500"></details>
 

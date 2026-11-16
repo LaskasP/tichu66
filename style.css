@@ -33,9 +33,11 @@ dialog{scrollbar-gutter:stable;overscroll-behavior:contain}
 .dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:4px}.dialog-heading h2{margin:0}.dialog-close{display:grid;place-items:center;padding:10px;flex-shrink:0;width:44px;height:44px}
 #gamesDialog .new-game{display:flex;align-items:center;justify-content:space-between;width:100%;margin:16px 0 24px;padding:12px 16px}#gamesDialog .new-game span{font-size:22px;line-height:1}
 #nav-sessions{border-top:1px solid var(--line);border-radius:0 0 8px 8px;margin-top:4px}
-.session-details{margin:0 4px 12px;overflow-wrap:anywhere}.session-details p:empty{display:none}.session-details p+p:not(:empty){margin-top:4px}
+.session-details{margin:0;text-align:right;overflow-wrap:anywhere;min-width:0}.session-details p:empty{display:none}.session-details p+p:not(:empty){margin-top:4px}
 #bench{display:flex;flex-wrap:wrap;gap:8px 16px;min-width:0}.bench{align-items:center}.bench-pick{display:flex;align-items:center;gap:8px;margin:0;color:var(--ink);min-width:0}.bench-pick select{width:auto;max-width:160px;min-width:0;font-size:13px}
 .setup-options{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}.setup-options>div{min-width:0}
+.bench{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-bottom:16px}.bench-controls{min-width:0}.bench-controls .bench-hint{display:block;margin-top:6px}
+@media(max-width:540px){.bench{gap:12px}.bench-pick{flex-direction:column;align-items:flex-start;gap:4px;width:100%}.bench-pick select{width:100%;max-width:100%}.session-details .helper{font-size:12px}}
 #sessionMode:disabled{appearance:none;background:var(--tint);border-color:var(--line);color:var(--muted);-webkit-text-fill-color:var(--muted);cursor:not-allowed}
 #sessionDialog #setupHint{margin-bottom:16px}#setupError{color:var(--error);font-size:13px;overflow-wrap:anywhere;margin:0 0 16px}#setupError:empty{margin:0}
 .dialog-actions{flex-wrap:wrap;align-items:center}.dialog-actions button{min-width:44px}
