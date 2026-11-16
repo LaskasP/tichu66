@@ -79,6 +79,7 @@ function render() {
     const [a, b] = totals(g.hands);
     return `<article><div class="row"><small>MATCH ${i + 1} · TARGET ${g.target}</small><strong>${a} : ${b} · Team ${a > b ? 'A' : 'B'} wins</strong></div><p>${esc(matchup(g.lineup))}</p>${g.lineup.length > 4 ? `<small>Resting: ${esc(g.lineup.slice(4).map(i => state.players[i]).join(' & '))}</small>` : ''}${hands(g.hands)}</article>`;
   }).reverse().join('') + (!state.games.length && !state.hands.length ? '<div class="empty">Record your first hand.<br>Wins count when a full match is completed.</div>' : '') + (state.legacy.length ? `<details><summary>${state.legacy.length} earlier hand records (excluded from match wins)</summary><p class="helper">Earlier records used a different lineup each hand. They remain in your JSON exports.</p>${state.legacy.map((r, i) => `<p>Earlier hand ${i + 1}: ${esc(r.a)} : ${esc(r.b)} · ${esc(r.note || '')}</p>`).join('')}</details>` : '');
+  syncDropdowns();
 }
 function changeTarget() { if (state.hands.length) return; state.target = Number($('target').value); persist(); render(); }
 function lineupChanged(index) {
@@ -119,6 +120,7 @@ function changeScoreMode() {
   for (const t of ['A', 'B']) $('score' + t).readOnly = scoring.mode === 'doubleA' || scoring.mode === 'doubleB';
   if (scoring.mode !== 'manual') { $('scoreA').value = a + scoring.bonusA; $('scoreB').value = b + scoring.bonusB; }
   scheduleScoreValidation();
+  syncDropdowns();
 }
 function resetScoring() { scoring = { mode: 'normal', bonusA: 0, bonusB: 0 }; $('scoreMode').value = 'normal'; changeScoreMode(); bonusLabels(); }
 function saveRound() {
@@ -192,6 +194,7 @@ function setupChanged() {
   const fixed = mode.value === 'fixed';
   $('setupHint').textContent = count === 4 ? 'Two fixed pairs. Everyone plays every match.' : count === 5 ? 'Four play, one rests. The existing rotation continues after each match.' : fixed ? 'Three fixed pairs take turns: A–B, B–C, C–A.' : 'Four play, two rest. Over 15 matches, everyone partners with everyone twice.';
   $('setupPlayers').innerHTML = Array.from({ length: count }, (_, i) => `<label for="setupName${i}">${fixed ? `Pair ${String.fromCharCode(65 + Math.floor(i / 2))} · Player ${i % 2 + 1}` : `Player ${i + 1}`}</label><input id="setupName${i}" required maxlength="40" value="${esc(previous[i] ?? `Player ${i + 1}`)}">`).join('');
+  syncDropdowns();
 }
 $('sessionForm').onsubmit = e => {
   e.preventDefault(); const name = $('sessionName').value.trim(), players = [...$('setupPlayers').querySelectorAll('input')].map(i => i.value.trim());
@@ -235,6 +238,112 @@ function showView(view) {
   $('pageMenu').hidePopover?.(); if (!['game', 'players', 'history'].includes(view)) view = 'game';
   for (const name of ['game', 'players', 'history']) { $('view-' + name).hidden = name !== view; if (name === view) $('nav-' + name).setAttribute('aria-current', 'page'); else $('nav-' + name).removeAttribute('aria-current'); }
   if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
+}
+// Keep selects as the source of form values, but use the same option sheet on
+// every platform instead of opening Safari's system picker.
+const dropdowns = new WeakMap();
+const picker = document.createElement('dialog');
+picker.id = 'optionPicker';
+picker.className = 'option-picker';
+picker.setAttribute('aria-labelledby', 'optionPickerTitle');
+picker.innerHTML = '<div class="dialog-heading"><h2 id="optionPickerTitle"></h2><button type="button" class="quiet" aria-label="Close options">Close</button></div><div class="picker-options" role="listbox" aria-labelledby="optionPickerTitle"></div>';
+document.body.append(picker);
+let pickerTrigger;
+picker.querySelector('button').onclick = () => picker.close();
+picker.addEventListener('click', event => {
+  if (event.target !== picker) return;
+  const bounds = picker.getBoundingClientRect();
+  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) picker.close();
+});
+picker.addEventListener('close', () => {
+  pickerTrigger?.setAttribute('aria-expanded', 'false');
+  if (pickerTrigger?.isConnected && !pickerTrigger.disabled) pickerTrigger.focus();
+});
+function syncDropdowns() {
+  document.querySelectorAll('select').forEach(select => {
+    let control = dropdowns.get(select);
+    if (!control) {
+      const label = document.querySelector(`label[for="${select.id}"]`);
+      const title = select.getAttribute('aria-label') || (label && [...label.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent).join('').trim()) || 'Choose an option';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.id = select.id + '-trigger';
+      button.className = 'select-trigger';
+      button.setAttribute('aria-haspopup', 'dialog');
+      button.setAttribute('aria-controls', picker.id);
+      button.setAttribute('aria-expanded', 'false');
+      if (select.hasAttribute('aria-describedby')) button.setAttribute('aria-describedby', select.getAttribute('aria-describedby'));
+      if (select.autofocus) { button.autofocus = true; select.autofocus = false; }
+      if (label) label.htmlFor = button.id;
+      select.hidden = true;
+      select.after(button);
+      control = { button, title };
+      dropdowns.set(select, control);
+      button.onclick = () => openDropdown(select, control);
+      button.onkeydown = event => {
+        if (['ArrowDown', 'ArrowUp'].includes(event.key)) { event.preventDefault(); openDropdown(select, control); }
+      };
+      select.addEventListener('change', syncDropdowns);
+    }
+    control.button.textContent = select.selectedOptions[0]?.textContent || 'Choose an option';
+    control.button.setAttribute('aria-label', `${control.title}: ${control.button.textContent}`);
+    control.button.disabled = select.disabled;
+  });
+}
+function openDropdown(select, { button, title }) {
+  if (select.disabled || picker.open) return;
+  pickerTrigger = button;
+  $('optionPickerTitle').textContent = title;
+  const list = picker.querySelector('.picker-options');
+  list.replaceChildren();
+  [...select.options].forEach(option => {
+    const choice = document.createElement('button');
+    choice.type = 'button';
+    choice.className = 'picker-option';
+    choice.setAttribute('role', 'option');
+    choice.setAttribute('aria-selected', String(option.selected));
+    choice.textContent = option.textContent;
+    choice.disabled = option.disabled;
+    choice.tabIndex = option.selected ? 0 : -1;
+    choice.onclick = () => {
+      const changed = select.value !== option.value;
+      // Close before change handlers can open another dialog or replace controls.
+      picker.close();
+      if (changed) {
+        select.value = option.value;
+        select.dispatchEvent(new Event('input', { bubbles: true }));
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      syncDropdowns();
+      // Seat changes rebuild the resting-player controls.
+      const replacement = document.getElementById(button.id);
+      if (replacement && !replacement.disabled) { pickerTrigger = replacement; replacement.focus(); }
+    };
+    list.append(choice);
+  });
+  let typed = '', lastKey = 0;
+  list.onkeydown = event => {
+    const choices = [...list.querySelectorAll('button:not(:disabled)')];
+    const index = choices.indexOf(document.activeElement);
+    let next;
+    if (event.key === 'ArrowDown') next = choices[(index + 1) % choices.length];
+    if (event.key === 'ArrowUp') next = choices[(index - 1 + choices.length) % choices.length];
+    if (event.key === 'Home') next = choices[0];
+    if (event.key === 'End') next = choices.at(-1);
+    if (event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      typed = Date.now() - lastKey > 700 ? event.key : typed + event.key;
+      lastKey = Date.now();
+      next = choices.find(choice => choice.textContent.trim().toLocaleLowerCase().startsWith(typed.toLocaleLowerCase()));
+    }
+    if (next) {
+      event.preventDefault();
+      choices.forEach(choice => { choice.tabIndex = choice === next ? 0 : -1; });
+      next.focus();
+    }
+  };
+  button.setAttribute('aria-expanded', 'true');
+  picker.showModal();
+  (list.querySelector('[aria-selected="true"]:not(:disabled)') || list.querySelector('button:not(:disabled)'))?.focus();
 }
 render(); restoreDraft(); if (startupError) $('error').textContent = startupError;
 showView(location.hash.slice(1) || 'game');
