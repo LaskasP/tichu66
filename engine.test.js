@@ -17,6 +17,45 @@ function finish(s) {
   assert.equal(engine.valid(s), true);
 }
 
+test('mid-match substitutions preserve scores and credit the finishing lineup', () => {
+  for (const n of [5, 6]) {
+    const s = session(n);
+    s.hands.push(score(100, 0, 'Before substitution'));
+    const before = copy(s), outgoing = s.order[0], incoming = s.order[4];
+    assert.equal(engine.changeSeat(s, 4, outgoing), true);
+    assert.equal(s.order[0], incoming);
+    assert.equal(s.order[4], outgoing);
+    assert.deepEqual(s.hands, before.hands);
+    assert.deepEqual(s.seed, before.seed);
+    assert.equal(engine.valid(s), true);
+    const finishingLineup = [...s.order];
+    finish(s);
+    assert.deepEqual(s.games[0].lineup, finishingLineup);
+    assert.deepEqual(engine.migrate(copy(s)), s);
+    assert.equal(engine.changeSeat(s, 4, s.order[0]), true, 'changes remain available after completed matches');
+    assert.deepEqual(s.games[0].lineup, finishingLineup, 'past results stay with their finishing lineup');
+  }
+});
+
+test('fixed six-player substitutions move intact pairs without changing saved pair identities', () => {
+  const s = session(6, 'fixed');
+  s.hands.push(score(75, 25));
+  assert.equal(engine.changeSeat(s, 4, 1), true);
+  assert.deepEqual(s.order, [5, 4, 2, 3, 1, 0]);
+  assert.deepEqual(s.seed, [0, 1, 2, 3, 4, 5]);
+  assert.equal(engine.valid(s), true);
+  finish(s);
+  assert.deepEqual(s.games[0].lineup, [5, 4, 2, 3, 1, 0]);
+});
+
+test('seat changes reject invalid selections and retain four-player match locks', () => {
+  const s = session(4), before = copy(s);
+  for (const args of [[-1, 0], [4, 0], [0, 4], [0, NaN]]) assert.equal(engine.changeSeat(s, ...args), false);
+  assert.deepEqual(s, before);
+  s.hands.push(score(50, 50));
+  assert.equal(engine.changeSeat(s, 0, 2), false);
+});
+
 function v2Backup() {
   return {
     version: 2,

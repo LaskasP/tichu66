@@ -42,7 +42,7 @@ function render() {
   for (let i = 0; i < 4; i++) {
     $('p' + i).innerHTML = state.players.map((n, j) => `<option value="${j}">${esc(n)}</option>`).join('');
     $('p' + i).value = state.order[i];
-    $('p' + i).disabled = locked || state.games.length > 0 || state.players.length === 6;
+    $('p' + i).disabled = state.players.length === 4 && (locked || state.games.length > 0);
   }
   $('target').value = state.target; $('target').disabled = locked;
   const [a, b] = totals(state.hands);
@@ -52,8 +52,8 @@ function render() {
     $('progress' + team).value = Math.max(0, Math.min(state.target, points));
   }
   $('undoButton').disabled = !state.hands.length && !state.games.length;
-  $('bench').textContent = state.players.length === 4 ? 'Everyone plays · Fixed pairs' : 'Sitting out: ' + state.order.slice(4).map(i => state.players[i]).join(' & ');
-  $('benchHint').textContent = state.players.length === 4 ? 'Same teams every match' : 'Changes after this match';
+  $('bench').innerHTML = state.players.length === 4 ? 'Everyone plays · Fixed pairs' : state.order.slice(4).map((player, i) => `<label class="bench-pick" for="rest${i}">Sitting out${state.players.length === 6 ? ` ${i + 1}` : ''}<select id="rest${i}" onchange="lineupChanged(${i + 4})">${state.players.map((name, id) => `<option value="${id}"${id === player ? ' selected' : ''}>${esc(name)}</option>`).join('')}</select></label>`).join('');
+  $('benchHint').textContent = state.players.length === 4 ? 'Same teams every match' : fixed ? 'Fixed pairs move together' : 'Change players anytime';
   $('nextLineup').textContent = state.players.length === 4 ? '' : `Next match: ${matchup(Tichu.next(state))}`;
   $('roundTitle').textContent = `Match ${state.games.length + 1} · Hand ${state.hands.length + 1}`;
   $('gameStatus').textContent = `First to ${state.target} points with a lead. ${modeLabel(state)}.`;
@@ -62,8 +62,8 @@ function render() {
   $('playersEyebrow').textContent = 'YOUR TABLE';
   $('standingsIntro').textContent = fixed ? 'Your pairs. Your shared wins.' : 'Different teams. Your own wins.';
   $('standingsLabel').textContent = fixed ? 'Pair' : 'Player';
-  $('standingsHelp').textContent = fixed ? 'Only completed matches count. Each pair receives its points and one win per match won.' : 'Only completed matches count. Each teammate receives their team’s points and one win per match won.';
-  $('rulesRotation').textContent = 'Teams stay together until one reaches the target with a lead. A tie means another hand. ' + (state.players.length === 4 ? 'The same pairs play the next match.' : state.players.length === 5 ? 'Then the resting player rotates in, as before.' : fixed ? 'Pairs take turns: A–B, B–C, C–A.' : 'A balanced 15-match cycle gives everyone 10 matches and 5 rests, partnering with each other player twice.');
+  $('standingsHelp').textContent = fixed ? 'Only completed matches count. The pairs finishing the match receive its points and result.' : 'Only completed matches count. The players finishing the match receive their team’s full points and win or loss. Players sitting out at the finish receive no result.';
+  $('rulesRotation').textContent = 'Scores stay with Team A and Team B until one reaches the target with a lead. A tie means another hand. ' + (state.players.length === 4 ? 'The same pairs play the next match.' : 'Change who sits out anytime. The finishing lineup receives the match points and result. ' + (state.players.length === 5 ? 'Then the resting player rotates in.' : fixed ? 'Fixed pairs move together. Pairs take turns: A–B, B–C, C–A.' : 'The next lineup follows the balanced 15-match schedule.'));
   let stats = fixed ? Array.from({ length: state.players.length / 2 }, (_, id) => ({ name: pairName(state.seed.slice(id * 2, id * 2 + 2)), id, w: 0, n: 0, pts: 0 })) : state.players.map((name, id) => ({ name, id, w: 0, n: 0, pts: 0 }));
   for (const g of state.games) {
     const points = totals(g.hands);
@@ -84,10 +84,10 @@ function render() {
 }
 function changeTarget() { if (state.hands.length) return; state.target = Number($('target').value); persist(); render(); }
 function lineupChanged(index) {
-  if (state.hands.length || state.games.length || state.players.length === 6) { render(); return; }
-  const occupied = state.order.indexOf(Number($('p' + index).value));
-  [state.order[index], state.order[occupied]] = [state.order[occupied], state.order[index]];
-  state.seed = [...state.order]; persist(); render();
+  const input = $(index < 4 ? 'p' + index : 'rest' + (index - 4));
+  if (!Tichu.changeSeat(state, index, Number(input.value))) { render(); return; }
+  if (state.players.length < 6 && !state.hands.length && !state.games.length) state.seed = [...state.order];
+  persist(); render();
 }
 function invalidScore(input) { return input.value === '' || !Number.isFinite(Number(input.value)) || Number(input.value) % 5 !== 0; }
 function validateScores() {

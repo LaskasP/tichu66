@@ -51,12 +51,22 @@ const Tichu = (() => {
     }
     if (!valid(converted)) throw Error('Invalid backup'); return converted;
   }
+  function changeSeat(s, index, player) {
+    const n = s.players.length;
+    if (!Number.isInteger(index) || index < 0 || index >= n || !Number.isInteger(player) || player < 0 || player >= n || n === 4 && (s.hands.length || s.games.length)) return false;
+    const occupied = s.order.indexOf(player);
+    if (s.mode === 'fixed' && n === 6 && Math.floor(index / 2) !== Math.floor(occupied / 2)) {
+      [s.order[index ^ 1], s.order[occupied ^ 1]] = [s.order[occupied ^ 1], s.order[index ^ 1]];
+    }
+    [s.order[index], s.order[occupied]] = [s.order[occupied], s.order[index]];
+    return true;
+  }
   function complete(s) {
     if (!won(s.hands, s.target)) return false;
     s.games.push({ lineup: [...s.order], target: s.target, hands: s.hands }); s.hands = [];
     s.order = s.players.length === 5 ? [s.order[4], ...s.order.slice(0, 4)] : lineupAt(s, s.games.length); return true;
   }
   const next = s => s.players.length === 5 ? [s.order[4], ...s.order.slice(0, 4)] : lineupAt(s, s.games.length + 1);
-  return { clone, id, totals, won, permutation, create, valid, migrate, complete, next, lineupAt, schedule };
+  return { clone, id, totals, won, permutation, create, valid, migrate, changeSeat, complete, next, lineupAt, schedule };
 })();
 if (typeof module !== 'undefined') module.exports = Tichu;

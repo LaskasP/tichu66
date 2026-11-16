@@ -40,6 +40,8 @@ Use **New game** to create a named session. A session contains completed matches
 
 In the six-player rotating cycle, everyone plays 10 matches, rests 5, and partners each other player twice. The next lineup is shown below the board. Rotation happens after a match reaches the target with a lead, never after individual hands. Undo reopens a completed match with its original lineup and target.
 
+For 5 or 6 players, change the sitting-out player or a team selector anytime, including during a match. Team scores and hand drafts stay in place. Fixed six-player pairs move together. The lineup that finishes the match receives its full points and win/loss result; players sitting out at the finish receive none. Past match results remain unchanged by later substitutions.
+
 Sessions automatically save in browser localStorage under `tichu-sessions-v1`. Each **Export JSON** downloads just the selected session as schema version 3, with a stable ID and editable name. Import adds a session; a matching ID offers update or copy. New exports require the updated app.
 
 Existing version-2 JSON backups import as five-player sessions while preserving players, history, unfinished hands, target and current rotation. Earlier `rounds` backups retain their legacy hand records separately. Existing browser data under `tichu-five-v1` is automatically migrated when no new session library exists; that original storage entry is left untouched. Migration never copies records from another active session.
