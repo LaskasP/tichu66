@@ -35,7 +35,6 @@ function render() {
   const locked = state.hands.length > 0, fixed = state.mode === 'fixed';
   $('sessionSelect').innerHTML = library.sessions.map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
   $('sessionSelect').value = state.id;
-  $('sessionSummary').textContent = modeLabel(state);
   $('editSetup').disabled = Boolean(state.hands.length || state.games.length || state.legacy.length);
   $('brandDetail').textContent = ` / ${state.players.length}`;
   document.title = `${state.name} · tichu66`;
@@ -53,7 +52,6 @@ function render() {
   }
   $('undoButton').disabled = !state.hands.length && !state.games.length;
   $('bench').innerHTML = state.players.length === 4 ? 'Everyone plays · Fixed pairs' : state.order.slice(4).map((player, i) => `<label class="bench-pick" for="rest${i}">Sitting out${state.players.length === 6 ? ` ${i + 1}` : ''}<select id="rest${i}" onchange="lineupChanged(${i + 4})">${state.players.map((name, id) => `<option value="${id}"${id === player ? ' selected' : ''}>${esc(name)}</option>`).join('')}</select></label>`).join('');
-  $('benchHint').textContent = state.players.length === 4 ? 'Same teams every match' : fixed ? 'Fixed pairs move together' : 'Change players anytime';
   $('nextLineup').textContent = state.players.length === 4 ? '' : `Next match: ${matchup(Tichu.next(state))}`;
   $('roundTitle').textContent = `Match ${state.games.length + 1} · Hand ${state.hands.length + 1}`;
   $('gameStatus').textContent = `First to ${state.target} points with a lead. ${modeLabel(state)}.`;
