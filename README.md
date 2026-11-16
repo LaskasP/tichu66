@@ -1,4 +1,4 @@
-# Tichu Scorebook
+# tichu66
 
 A Tichu scorekeeper for 4–6 players. Plain HTML, CSS and JavaScript; no runtime dependencies or build step.
 

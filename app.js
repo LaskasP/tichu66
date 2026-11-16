@@ -38,7 +38,7 @@ function render() {
   $('sessionSummary').textContent = modeLabel(state);
   $('editSetup').disabled = Boolean(state.hands.length || state.games.length || state.legacy.length);
   $('brandDetail').textContent = ` / ${state.players.length}`;
-  document.title = `${state.name} · Tichu`;
+  document.title = `${state.name} · tichu66`;
   for (let i = 0; i < 4; i++) {
     $('p' + i).innerHTML = state.players.map((n, j) => `<option value="${j}">${esc(n)}</option>`).join('');
     $('p' + i).value = state.order[i];
