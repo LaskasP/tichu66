@@ -133,6 +133,15 @@
               </svg>
               <span id="timerButtonLabel" class="sr-only">Play</span>
             </button>
+            <button
+              type="button"
+              id="timerResetButton"
+              onclick="resetMatchTimer()"
+              aria-label="Reset match timer"
+              title="Reset match timer"
+            >
+              Reset
+            </button>
           </div>
           <div class="teams">
             <section class="team" aria-labelledby="teamA-heading">
@@ -254,13 +263,6 @@
               Undo last hand
             </button>
           </div>
-          <div
-            id="feedback"
-            class="feedback"
-            role="status"
-            aria-live="polite"
-            hidden
-          ></div>
           <div class="bench">
             <div class="bench-controls">
               <span id="bench">Lineup ready</span>
@@ -357,6 +359,7 @@
           <div id="history"></div>
         </section>
       </main>
+      <div id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
       <footer>Your table. Your scorebook.</footer>
     </div>
     <dialog

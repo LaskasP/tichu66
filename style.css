@@ -48,13 +48,19 @@ dialog{scrollbar-gutter:stable;overscroll-behavior:contain}
 .player-picks select:disabled{background-image:none;border-color:transparent;padding-right:0;color:var(--muted);-webkit-text-fill-color:var(--muted)}
 @media(max-width:540px){.player-picks select,.bench-pick select{font-size:16px}.bench-pick select{padding-right:24px;background-position:right 5px center}.player-picks{grid-template-columns:minmax(0,1fr)}}
 
+/* Brief confirmations float above the bottom controls without shifting content. */
+#feedback{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:30;transform:translateX(-50%);width:max-content;max-width:min(480px,calc(100vw - 32px));margin:0;padding:12px 18px;border:0;border-radius:18px;background:var(--ink);color:var(--surface);box-shadow:0 4px 20px #0002;font-size:13px;line-height:1.5;text-align:center;overflow-wrap:anywhere;pointer-events:none;animation:toast-in .16s ease-out}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
+@media(max-width:540px){body:has(#view-game:not([hidden])) #feedback{bottom:calc(94px + env(safe-area-inset-bottom,0px))}}
+@media(prefers-reduced-motion:reduce){#feedback{animation:none}}
+
 /* A quiet, borderless timer keeps attention on the scores. */
 .match-timer{display:flex;align-items:center;gap:8px;width:fit-content;margin:0 0 8px auto;padding:0;color:#000}
 .timer-reading{display:flex;align-items:center;min-width:0}
 #timerDisplay{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
-#timerButton{display:grid;place-items:center;min-height:44px;min-width:44px;padding:0;color:inherit;background:transparent;border:0;border-radius:0}
+#timerButton,#timerResetButton{display:grid;place-items:center;min-height:44px;min-width:44px;padding:0;color:inherit;background:transparent;border:0;border-radius:0}
 #timerButton svg{width:14px;height:14px}
-#timerButton:hover{background:transparent;opacity:.6}#timerButton:active{background:transparent;opacity:.4}
+#timerButton:hover,#timerResetButton:hover{background:transparent;opacity:.6}#timerButton:active,#timerResetButton:active{background:transparent;opacity:.4}
 #history .match-duration{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 
 /* Shared dropdown controls and option sheet, including iOS Safari. */

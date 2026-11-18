@@ -50,6 +50,11 @@ function toggleMatchTimer() {
   if (freshSession) return;
   Tichu.toggleTimer(state); persist(); renderTimer();
 }
+function resetMatchTimer() {
+  if (freshSession) return;
+  delete state.timer;
+  persist(); renderTimer(); announce('Match timer reset.');
+}
 function render() {
   renderTimer();
   const locked = state.hands.length > 0, fixed = state.mode === 'fixed';
@@ -256,7 +261,13 @@ async function importData(e) {
   } catch { alert('This JSON is not a supported Tichu game. Your current games were kept.'); }
   finally { e.target.value = ''; }
 }
-function announce(message) { $('feedback').textContent = message; $('feedback').hidden = false; }
+let feedbackTimer;
+function announce(message) {
+  clearTimeout(feedbackTimer);
+  $('feedback').textContent = message;
+  $('feedback').hidden = false;
+  feedbackTimer = setTimeout(() => { $('feedback').hidden = true; }, 3000);
+}
 function showView(view) {
   $('pageMenu').hidePopover?.(); if (!['game', 'players', 'history'].includes(view)) view = 'game';
   for (const name of ['game', 'players', 'history']) { $('view-' + name).hidden = name !== view; if (name === view) $('nav-' + name).setAttribute('aria-current', 'page'); else $('nav-' + name).removeAttribute('aria-current'); }
