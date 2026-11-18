@@ -7,6 +7,18 @@ const Tichu = (() => {
   const permutation = (order, n) => Array.isArray(order) && order.length === n && new Set(order).size === n && order.every(i => Number.isInteger(i) && i >= 0 && i < n);
   const hand = h => h && Number.isFinite(h.a) && Number.isFinite(h.b) && h.a % 5 === 0 && h.b % 5 === 0 && typeof h.note === 'string';
   const unfinished = (hands, target) => { let a = 0, b = 0; return hands.every(h => { a += h.a; b += h.b; return Math.max(a, b) < target || a === b; }); };
+  const milliseconds = value => Number.isSafeInteger(value) && value >= 0;
+  const timerValid = s => !('timer' in s) || s.timer && milliseconds(s.timer.elapsedMs) && (s.timer.startedAt === null || milliseconds(s.timer.startedAt));
+  function elapsed(s, now = Date.now()) {
+    return s.timer ? s.timer.elapsedMs + (s.timer.startedAt === null ? 0 : Math.max(0, now - s.timer.startedAt)) : 0;
+  }
+  function pauseTimer(s, now = Date.now()) {
+    if (s.timer) s.timer = { elapsedMs: elapsed(s, now), startedAt: null };
+  }
+  function toggleTimer(s, now = Date.now()) {
+    if (s.timer && s.timer.startedAt !== null) pauseTimer(s, now);
+    else s.timer = { elapsedMs: elapsed(s, now), startedAt: now };
+  }
   function schedule(seed) {
     const ring = [...seed], rounds = [];
     for (let r = 0; r < 5; r++) {
@@ -29,13 +41,13 @@ const Tichu = (() => {
     s.order = lineupAt(s, 0); return s;
   }
   function valid(s) {
-    if (!s || s.version !== 3 || typeof s.id !== 'string' || !s.id || typeof s.name !== 'string' || !s.name.trim() || s.name.length > 80 || !Array.isArray(s.players)) return false;
+    if (!s || s.version !== 3 || typeof s.id !== 'string' || !s.id || typeof s.name !== 'string' || !s.name.trim() || s.name.length > 80 || !Array.isArray(s.players) || !timerValid(s)) return false;
     const n = s.players.length;
     if (![4, 5, 6].includes(n) || !s.players.every(p => typeof p === 'string' && p.trim() && p.length <= 40) || !['fixed', 'rotating'].includes(s.mode) || n === 4 && s.mode !== 'fixed' || n === 5 && s.mode !== 'rotating' || !permutation(s.seed, n) || !permutation(s.order, n) || ![500, 1000].includes(s.target)) return false;
     if (!Array.isArray(s.hands) || !s.hands.every(hand) || !unfinished(s.hands, s.target) || !Array.isArray(s.games) || !Array.isArray(s.legacy) || !s.legacy.every(h => h && typeof h === 'object')) return false;
     const samePair = (a, b) => a.every(i => b.includes(i));
     const pairsValid = order => s.mode !== 'fixed' || [order.slice(0, 2), order.slice(2, 4), ...(n === 6 ? [order.slice(4, 6)] : [])].every(pair => s.seed.some((_, i) => i % 2 === 0 && samePair(pair, s.seed.slice(i, i + 2))));
-    return pairsValid(s.order) && s.games.every(g => g && permutation(g.lineup, n) && pairsValid(g.lineup) && [500, 1000].includes(g.target) && Array.isArray(g.hands) && g.hands.every(hand) && won(g.hands, g.target) && unfinished(g.hands.slice(0, -1), g.target));
+    return pairsValid(s.order) && s.games.every(g => g && (!('durationMs' in g) || milliseconds(g.durationMs)) && permutation(g.lineup, n) && pairsValid(g.lineup) && [500, 1000].includes(g.target) && Array.isArray(g.hands) && g.hands.every(hand) && won(g.hands, g.target) && unfinished(g.hands.slice(0, -1), g.target));
   }
   function migrate(raw, name = 'Imported game') {
     if (!raw || typeof raw !== 'object') throw Error('Invalid backup');
@@ -61,12 +73,21 @@ const Tichu = (() => {
     [s.order[index], s.order[occupied]] = [s.order[occupied], s.order[index]];
     return true;
   }
-  function complete(s) {
+  function complete(s, now = Date.now()) {
     if (!won(s.hands, s.target)) return false;
-    s.games.push({ lineup: [...s.order], target: s.target, hands: s.hands }); s.hands = [];
+    const game = { lineup: [...s.order], target: s.target, hands: s.hands };
+    if (s.timer) game.durationMs = elapsed(s, now);
+    s.games.push(game); s.hands = []; delete s.timer;
     s.order = s.players.length === 5 ? [s.order[4], ...s.order.slice(0, 4)] : lineupAt(s, s.games.length); return true;
   }
+  function reopen(s) {
+    const g = s.games.pop();
+    if (!g) return;
+    s.order = [...g.lineup]; s.target = g.target; s.hands = g.hands;
+    delete s.timer;
+    if ('durationMs' in g) s.timer = { elapsedMs: g.durationMs, startedAt: null };
+  }
   const next = s => s.players.length === 5 ? [s.order[4], ...s.order.slice(0, 4)] : lineupAt(s, s.games.length + 1);
-  return { clone, id, totals, won, permutation, create, valid, migrate, changeSeat, complete, next, lineupAt, schedule };
+  return { clone, id, totals, won, permutation, create, valid, migrate, changeSeat, complete, reopen, elapsed, pauseTimer, toggleTimer, next, lineupAt, schedule };
 })();
 if (typeof module !== 'undefined') module.exports = Tichu;

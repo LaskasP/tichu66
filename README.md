@@ -46,6 +46,10 @@ For 5 or 6 players, change the sitting-out player or a team selector anytime, in
 
 Sessions automatically save in browser localStorage under `tichu-sessions-v1`. Each **Export JSON** downloads just the selected session as schema version 3, with a stable ID and editable name. Import adds a session; a matching ID offers update or copy. New exports require the updated app.
 
+Use **Play / Pause** beside Match time to track active playing time. The timer starts manually, excludes pauses, and stops when the winning hand is saved; the next match starts ready at zero. A running timer continues across refreshes and while the browser is closed until paused. Switching sessions pauses the outgoing timer. Undo restores a completed match's saved time, paused.
+
+Timing is optional within the existing version-3 JSON: timed completed matches include `durationMs` (total milliseconds); an unfinished timed match has `timer: { elapsedMs, startedAt }`, where `startedAt` is a Unix timestamp in milliseconds or `null` when paused. Exports snapshot unfinished timers as paused. Untimed matches and older backups need neither field and retain their original history.
+
 Existing version-2 JSON backups import as five-player sessions while preserving players, history, unfinished hands, target and current rotation. Earlier `rounds` backups retain their legacy hand records separately. Existing browser data under `tichu-five-v1` is automatically migrated when no new session library exists; that original storage entry is left untouched. Migration never copies records from another active session.
 
 To move your ongoing game, export a backup in the original app and import it here. Keep the same local address and port to reuse browser storage. Data does not sync between devices or origins. If saved data cannot be loaded, it is left untouched and the app reports the problem rather than overwriting it. Browser storage is not a substitute for an exported backup.
@@ -58,6 +62,6 @@ To move your ongoing game, export a backup in the original app and import it her
 - engine.js: save validation, migration and match rotation
 - engine.test.js: rules and save compatibility checks (`node --test engine.test.js`)
 
-Features include automatic opposing scores, independent ±100 adjustments, double victory, team or personal standings, match history, undo and JSON backups.
+Features include automatic opposing scores in normal mode, independent ±100 adjustments, team or personal standings, match history, undo and JSON backups.
 
 The package excludes the original deployment identity, Git credentials and personal game data.

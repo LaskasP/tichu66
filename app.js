@@ -34,7 +34,24 @@ function persist() {
 const pairName = pair => pair.map(i => state.players[i]).join(' + ');
 const matchup = order => `${pairName(order.slice(0, 2))} vs ${pairName(order.slice(2, 4))}`;
 const modeLabel = s => `${s.players.length} players · ${s.mode === 'fixed' ? 'Fixed pairs' : 'Rotating partners'}`;
+function formatDuration(ms) {
+  const seconds = Math.floor(ms / 1000);
+  return [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60].map(n => String(n).padStart(2, '0')).join(':');
+}
+function renderTimer() {
+  const running = Boolean(state.timer && state.timer.startedAt !== null);
+  $('timerDisplay').textContent = formatDuration(Tichu.elapsed(state));
+  $('timerStatus').textContent = running ? 'Running' : state.timer ? 'Paused' : 'Ready';
+  $('timerButtonLabel').textContent = running ? 'Pause' : 'Play';
+  $('timerButton').setAttribute('aria-label', `${running ? 'Pause' : 'Play'} match timer`);
+  $('timerIcon').setAttribute('d', running ? 'M5 3h4v14H5zM12 3h4v14h-4z' : 'M6 3 17 10 6 17Z');
+}
+function toggleMatchTimer() {
+  if (freshSession) return;
+  Tichu.toggleTimer(state); persist(); renderTimer();
+}
 function render() {
+  renderTimer();
   const locked = state.hands.length > 0, fixed = state.mode === 'fixed';
   $('sessionSelect').innerHTML = library.sessions.map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
   $('sessionSelect').value = state.id;
@@ -80,7 +97,7 @@ function render() {
   const hands = hs => hs.map((h, i) => `<p><small>Hand ${i + 1}: ${h.a} : ${h.b}${h.note ? ' · ' + esc(h.note) : ''}</small></p>`).join('');
   $('history').innerHTML = (state.hands.length ? `<article><strong>Current match · ${a} : ${b}</strong><p>${esc(matchup(state.order))}</p>${hands(state.hands)}</article>` : '') + state.games.map((g, i) => {
     const [a, b] = totals(g.hands);
-    return `<article><div class="row"><small>MATCH ${i + 1} · TARGET ${g.target}</small><strong>${a} : ${b} · Team ${a > b ? 'A' : 'B'} wins</strong></div><p>${esc(matchup(g.lineup))}</p>${g.lineup.length > 4 ? `<small>Resting: ${esc(g.lineup.slice(4).map(i => state.players[i]).join(' & '))}</small>` : ''}${hands(g.hands)}</article>`;
+    return `<article><div class="row"><small>MATCH ${i + 1} · TARGET ${g.target}</small><strong>${a} : ${b} · Team ${a > b ? 'A' : 'B'} wins</strong></div><p>${esc(matchup(g.lineup))}</p>${g.durationMs !== undefined ? `<p class="match-duration">Match time · ${formatDuration(g.durationMs)}</p>` : ''}${g.lineup.length > 4 ? `<small>Resting: ${esc(g.lineup.slice(4).map(i => state.players[i]).join(' & '))}</small>` : ''}${hands(g.hands)}</article>`;
   }).reverse().join('') + (!state.games.length && !state.hands.length ? '<div class="empty">Record your first hand.<br>Wins count when a full match is completed.</div>' : '') + (state.legacy.length ? `<details><summary>${state.legacy.length} earlier hand records (excluded from match wins)</summary><p class="helper">Earlier records used a different lineup each hand. They remain in your JSON exports.</p>${state.legacy.map((r, i) => `<p>Earlier hand ${i + 1}: ${esc(r.a)} : ${esc(r.b)} · ${esc(r.note || '')}</p>`).join('')}</details>` : '');
   syncDropdowns();
 }
@@ -112,20 +129,17 @@ function scheduleScoreValidation() {
 }
 function bonusLabels() { for (const t of ['A', 'B']) $('bonus' + t).textContent = 'Tichu adjustment: ' + (scoring['bonus' + t] > 0 ? '+' : '') + scoring['bonus' + t]; }
 function syncScore(team) {
-  if (scoring.mode !== 'normal' || $('score' + team).value === '') return;
+  if ($('score' + team).value === '') return;
   const score = Number($('score' + team).value); if (!Number.isFinite(score)) return;
   const other = team === 'A' ? 'B' : 'A'; $('score' + other).value = 100 - (score - scoring['bonus' + team]) + scoring['bonus' + other];
 }
 function adjustScore(team, delta) { const input = $('score' + team); if (input.value === '' || !Number.isFinite(Number(input.value))) return; scoring['bonus' + team] += delta; input.value = Number(input.value) + delta; bonusLabels(); scheduleScoreValidation(); }
-function changeScoreMode() {
-  scoring.mode = $('scoreMode').value;
-  let a = 50, b = 50; if (scoring.mode === 'doubleA') { a = 200; b = 0; } if (scoring.mode === 'doubleB') { a = 0; b = 200; }
-  for (const t of ['A', 'B']) $('score' + t).readOnly = scoring.mode === 'doubleA' || scoring.mode === 'doubleB';
-  if (scoring.mode !== 'manual') { $('scoreA').value = a + scoring.bonusA; $('scoreB').value = b + scoring.bonusB; }
+function resetScoring() {
+  scoring = { mode: 'normal', bonusA: 0, bonusB: 0 };
+  for (const t of ['A', 'B']) $('score' + t).value = '50';
+  bonusLabels();
   scheduleScoreValidation();
-  syncDropdowns();
 }
-function resetScoring() { scoring = { mode: 'normal', bonusA: 0, bonusB: 0 }; $('scoreMode').value = 'normal'; changeScoreMode(); bonusLabels(); }
 function saveRound() {
   const a = Number($('scoreA').value), b = Number($('scoreB').value);
   if (!validateScores()) return;
@@ -140,10 +154,10 @@ function saveRound() {
 function undo() {
   if (!state.hands.length && !state.games.length) return;
   if (!confirm('Remove the last hand? A completed match will reopen and its win will be removed.')) return;
-  if (!state.hands.length) { const g = state.games.pop(); state.order = [...g.lineup]; state.target = g.target; state.hands = g.hands; }
+  if (!state.hands.length) Tichu.reopen(state);
   const h = state.hands.pop(), meta = h.scoring;
-  scoring = meta && ['normal', 'manual', 'doubleA', 'doubleB'].includes(meta.mode) && Number.isFinite(meta.bonusA) && Number.isFinite(meta.bonusB) ? { ...meta } : { mode: 'manual', bonusA: 0, bonusB: 0 };
-  $('scoreMode').value = scoring.mode; changeScoreMode(); bonusLabels(); $('scoreA').value = h.a; $('scoreB').value = h.b; $('note').value = h.note; $('noteDetails').open = Boolean(h.note);
+  scoring = { mode: 'normal', bonusA: Number.isFinite(meta?.bonusA) ? meta.bonusA : 0, bonusB: Number.isFinite(meta?.bonusB) ? meta.bonusB : 0 };
+  bonusLabels(); $('scoreA').value = h.a; $('scoreB').value = h.b; $('note').value = h.note; $('noteDetails').open = Boolean(h.note);
   persist(); render(); announce('Last hand undone. Review the scores and save again.');
 }
 function openPlayers() { $('playerInputs').innerHTML = state.players.map((n, i) => `<label for="name${i}">Player ${i + 1}</label><input id="name${i}" required maxlength="40" value="${esc(n)}">`).join(''); $('playersDialog').showModal(); }
@@ -155,14 +169,15 @@ $('playersForm').onsubmit = e => {
 function draft() { return { scoring: { ...scoring }, a: $('scoreA').value, b: $('scoreB').value, note: $('note').value }; }
 function restoreDraft() {
   const d = state.draft; resetScoring();
-  if (d && d.scoring && ['normal', 'manual', 'doubleA', 'doubleB'].includes(d.scoring.mode) && Number.isFinite(d.scoring.bonusA) && Number.isFinite(d.scoring.bonusB)) {
-    scoring = { ...d.scoring }; $('scoreMode').value = scoring.mode; changeScoreMode(); bonusLabels();
+  if (d && d.scoring && Number.isFinite(d.scoring.bonusA) && Number.isFinite(d.scoring.bonusB)) {
+    scoring = { mode: 'normal', bonusA: d.scoring.bonusA, bonusB: d.scoring.bonusB }; bonusLabels();
     $('scoreA').value = typeof d.a === 'string' ? d.a : '50'; $('scoreB').value = typeof d.b === 'string' ? d.b : '50';
   }
   $('note').value = typeof d?.note === 'string' ? d.note : ''; $('noteDetails').open = Boolean($('note').value);
   scheduleScoreValidation();
 }
 function activate(s) {
+  Tichu.pauseTimer(state);
   if (freshSession) { library.sessions = [s]; freshSession = false; }
   state.draft = draft(); state = s; library.activeId = s.id; restoreDraft();
   $('error').textContent = ''; $('feedback').hidden = true; persist(); render(); showView('game');
@@ -209,13 +224,14 @@ $('sessionForm').onsubmit = e => {
   const s = Tichu.create({ name, players, mode: $('sessionMode').value, target: Number($('setupTarget').value) });
   if (editingSetup) {
     freshSession = false;
-    s.id = state.id; s.draft = draft(); library.sessions[library.sessions.indexOf(state)] = s; state = s; restoreDraft(); persist(); render();
+    s.id = state.id; s.draft = draft(); if (state.timer) s.timer = { ...state.timer }; library.sessions[library.sessions.indexOf(state)] = s; state = s; restoreDraft(); persist(); render();
   } else { library.sessions.push(s); activate(s); }
   $('sessionDialog').close(); announce(`${s.name} ${editingSetup ? 'updated' : 'created'}. Ready for the first hand.`);
 };
 function exportData() {
   state.draft = draft();
-  const url = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
+  const backup = Tichu.clone(state); Tichu.pauseTimer(backup);
+  const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
   const a = document.createElement('a'); a.href = url; a.download = (state.name.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-').replace(/[. ]+$/g, '') || 'tichu-game') + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 async function importData(e) {
@@ -228,6 +244,7 @@ async function importData(e) {
       const action = prompt('A game with this ID already exists. Type “update” to replace it, or “copy” to keep both.', 'copy');
       if (action === null) return;
       if (action.trim().toLowerCase() === 'update') {
+        Tichu.pauseTimer(state);
         state.draft = draft(); library.sessions[index] = s;
         // Activate without copying the outgoing draft over imported data.
         library.activeId = s.id; state = s; restoreDraft(); persist(); render(); showView('game');
@@ -352,10 +369,11 @@ function openDropdown(select, { button, title }) {
   (list.querySelector('[aria-selected="true"]:not(:disabled)') || list.querySelector('button:not(:disabled)'))?.focus();
 }
 render(); restoreDraft(); if (startupError) $('error').textContent = startupError;
+setInterval(renderTimer, 250);
 showView(location.hash.slice(1) || 'game');
 // Keep entered, unsaved hand values with their own session as well.
 for (const id of ['scoreA', 'scoreB']) $(id).addEventListener('input', scheduleScoreValidation);
-for (const id of ['scoreA', 'scoreB', 'scoreMode', 'note']) {
+for (const id of ['scoreA', 'scoreB', 'note']) {
   $(id).addEventListener('input', persist);
   $(id).addEventListener('change', persist);
 }

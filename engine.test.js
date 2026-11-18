@@ -7,6 +7,59 @@ const copy = value => JSON.parse(JSON.stringify(value));
 const score = (a, b, note = '') => ({ a, b, note });
 const rotate = order => [order[order.length - 1], ...order.slice(0, -1)];
 
+test('timer excludes pauses, survives JSON reload, and archives total time only on a win', () => {
+  let s = session(5);
+  engine.toggleTimer(s, 1000);
+  assert.equal(engine.elapsed(s, 6500), 5500);
+  engine.toggleTimer(s, 6500);
+  assert.equal(engine.elapsed(s, 20000), 5500);
+  engine.toggleTimer(s, 30000);
+  s = engine.migrate(copy(s));
+  s.hands.push(score(100, 0));
+  assert.equal(engine.complete(s, 32000), false);
+  assert.equal(engine.elapsed(s, 32000), 7500);
+  s.hands.push(score(400, 0));
+  assert.equal(engine.complete(s, 35000), true);
+  assert.equal(s.games[0].durationMs, 10500);
+  assert.equal('timer' in s, false);
+  assert.equal(engine.elapsed(s, 90000), 0);
+  assert.deepEqual(engine.migrate(copy(s)), s);
+  engine.reopen(s);
+  s.hands.pop();
+  assert.deepEqual(s.timer, { elapsedMs: 10500, startedAt: null });
+  engine.toggleTimer(s, 100000);
+  s.hands.push(score(400, 0));
+  engine.complete(s, 102000);
+  assert.equal(s.games[0].durationMs, 12500);
+});
+
+test('untimed history keeps the existing JSON contract and zero is a valid timed duration', () => {
+  const s = session(5);
+  finish(s);
+  assert.equal('durationMs' in s.games[0], false);
+  assert.equal('timer' in s, false);
+  engine.reopen(s);
+  assert.equal('timer' in s, false);
+  engine.toggleTimer(s, 1000);
+  engine.complete(s, 1000);
+  assert.equal(s.games[0].durationMs, 0);
+  assert.equal(engine.valid(s), true);
+});
+
+test('optional timing fields reject corrupt data without requiring timing in old backups', () => {
+  for (const timer of [null, {}, { elapsedMs: -1, startedAt: null }, { elapsedMs: 0, startedAt: 'now' }, { elapsedMs: 0.5, startedAt: null }]) {
+    assert.equal(engine.valid({ ...session(5), timer }), false);
+  }
+  const s = session(5);
+  finish(s);
+  for (const durationMs of [-1, null, '1000', 1.5, Infinity]) {
+    s.games[0].durationMs = durationMs;
+    assert.equal(engine.valid(s), false);
+  }
+  delete s.games[0].durationMs;
+  assert.equal(engine.valid(s), true);
+});
+
 function session(n, mode = 'rotating', target = 500) {
   return engine.create({ name: 'Friday table', players: players.slice(0, n), mode, target });
 }

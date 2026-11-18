@@ -98,14 +98,42 @@
           <div class="heading-row">
             <div><h1 id="roundTitle">Game 1 · Hand 1</h1></div>
             <div class="target-wrap">
-              <label for="target">Play to</label
-              ><select id="target" onchange="changeTarget()">
+              <select id="target" onchange="changeTarget()">
                 <option value="500">500 points</option>
                 <option value="1000">1,000 points</option>
               </select>
             </div>
           </div>
           <p class="sr-only" id="gameStatus"></p>
+          <div class="match-timer" role="group" aria-label="Match timer">
+            <div class="timer-reading">
+              <span class="sr-only">Match time</span>
+              <span
+                id="timerDisplay"
+                role="timer"
+                aria-label="Elapsed match time"
+                >00:00:00</span
+              >
+              <span id="timerStatus" class="sr-only">Ready</span>
+            </div>
+            <button
+              type="button"
+              id="timerButton"
+              onclick="toggleMatchTimer()"
+              aria-label="Play match timer"
+            >
+              <svg
+                viewBox="0 0 20 20"
+                width="18"
+                height="18"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path id="timerIcon" d="M6 3 17 10 6 17Z" />
+              </svg>
+              <span id="timerButtonLabel" class="sr-only">Play</span>
+            </button>
+          </div>
           <div class="teams">
             <section class="team" aria-labelledby="teamA-heading">
               <div class="team-label">
@@ -218,15 +246,6 @@
               </div>
             </section>
           </div>
-          <div class="hand-toolbar">
-            <label for="scoreMode">Hand type</label
-            ><select id="scoreMode" onchange="changeScoreMode()">
-              <option value="normal">Normal · 100 points</option>
-              <option value="doubleA">Team A double victory · 200–0</option>
-              <option value="doubleB">Team B double victory · 0–200</option>
-              <option value="manual">Manual scores</option>
-            </select>
-          </div>
           <p id="error" role="alert"></p>
           <div class="save-row" aria-label="Save or undo hand">
             <button class="primary" onclick="saveRound()">
@@ -272,8 +291,7 @@
             </p>
             <p>
               Normal hands share 100 base points. Tichu is ±100; Grand Tichu is
-              ±200. Choose double victory for 200–0, then add any Tichu
-              adjustments.
+              ±200. Use the +100 and −100 buttons to add adjustments to each team.
             </p>
           </details>
         </section>
@@ -466,7 +484,12 @@
             onclick="document.getElementById('sessionDialog').close()"
           >
             Cancel</button
-          ><button type="button" class="quiet" onclick="document.getElementById('file').click()">Import JSON</button
+          ><button
+            type="button"
+            class="quiet"
+            onclick="document.getElementById('file').click()"
+          >
+            Import JSON</button
           ><button type="submit" class="primary">Create game</button>
         </div>
       </form>
