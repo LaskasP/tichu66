@@ -105,6 +105,10 @@
             </div>
           </div>
           <p class="sr-only" id="gameStatus"></p>
+          <div class="match-tools">
+            <div class="bench">
+              <div class="bench-controls"><span id="bench">Lineup ready</span></div>
+            </div>
           <div class="match-timer" role="group" aria-label="Match timer">
             <div class="timer-reading">
               <span class="sr-only">Match time</span>
@@ -143,6 +147,7 @@
               Reset
             </button>
           </div>
+          </div>
           <div class="teams">
             <section class="team" aria-labelledby="teamA-heading">
               <div class="team-label">
@@ -171,7 +176,9 @@
               ></progress>
               <div class="hand-entry">
                 <label for="scoreA">This hand</label
-                ><input
+                >
+                <div class="score-shortcut-row">
+                <input
                   id="scoreA"
                   aria-describedby="bonusA error"
                   type="number"
@@ -179,6 +186,8 @@
                   value="50"
                   oninput="syncScore('A')"
                 />
+                <button type="button" id="doubleVictoryA" class="score-shortcut" onclick="setDoubleVictory('A')" aria-label="Team A one-two: set scores to 200–0" title="Team A one-two · 200–0">1–2</button>
+                </div>
                 <div class="adjustments">
                   <button
                     type="button"
@@ -225,8 +234,9 @@
                 aria-label="Team B progress toward target"
               ></progress>
               <div class="hand-entry">
-                <label for="scoreB">This hand</label
-                ><input
+                <label for="scoreB">This hand</label>
+                <div class="score-shortcut-row">
+                <input
                   id="scoreB"
                   aria-describedby="bonusB error"
                   type="number"
@@ -234,6 +244,8 @@
                   value="50"
                   oninput="syncScore('B')"
                 />
+                <button type="button" id="doubleVictoryB" class="score-shortcut" onclick="setDoubleVictory('B')" aria-label="Team B one-two: set scores to 0–200" title="Team B one-two · 0–200">1–2</button>
+                </div>
                 <div class="adjustments">
                   <button
                     type="button"
@@ -262,11 +274,6 @@
             ><button id="undoButton" class="quiet" onclick="undo()">
               Undo last hand
             </button>
-          </div>
-          <div class="bench">
-            <div class="bench-controls">
-              <span id="bench">Lineup ready</span>
-            </div>
           </div>
           <p class="helper" id="nextLineup"></p>
 

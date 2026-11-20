@@ -139,6 +139,12 @@ function syncScore(team) {
   const other = team === 'A' ? 'B' : 'A'; $('score' + other).value = 100 - (score - scoring['bonus' + team]) + scoring['bonus' + other];
 }
 function adjustScore(team, delta) { const input = $('score' + team); if (input.value === '' || !Number.isFinite(Number(input.value))) return; scoring['bonus' + team] += delta; input.value = Number(input.value) + delta; bonusLabels(); scheduleScoreValidation(); }
+function setDoubleVictory(team) {
+  scoring = { mode: 'normal', bonusA: 0, bonusB: 0 };
+  $('scoreA').value = team === 'A' ? '200' : '0';
+  $('scoreB').value = team === 'B' ? '200' : '0';
+  bonusLabels(); validateScores(); persist();
+}
 function resetScoring() {
   scoring = { mode: 'normal', bonusA: 0, bonusB: 0 };
   for (const t of ['A', 'B']) $('score' + t).value = '50';
