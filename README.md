@@ -1,6 +1,6 @@
 # tichu66
 
-A Tichu scorekeeper for 4–6 players. Plain HTML, CSS and JavaScript; no runtime dependencies or build step.
+tichu66 is a mobile-friendly Tichu scorekeeper for a table of 4–6 friends. Play with two fixed pairs and no rotation for 4 players, four active players and one rotating rest for 5 players, or choose between three fixed pairs taking turns and rotating partnerships with two players resting for 6 players. Track hands, match scores, team or individual standings, and match time across named game sessions. There is no backend, so player data is not stored on a server; games are saved in browser sessions and can be exported as local JSON files to keep or resume them. Built with plain HTML, CSS and JavaScript, it requires no runtime dependencies or build step.
 
 ## Run locally
 
@@ -37,7 +37,11 @@ To move your ongoing game, export a backup in the original app and import it her
 
 - index.html: layout and controls
 - style.css: responsive design
-- app.js: scoring controls, sessions, statistics, navigation and persistence
+- `app.js` starts the app and connects draft input events.
+- `match.js` handles scoring, lineup changes, undo, and the match timer.
+- `sessions.js` manages game setup, browser storage, and JSON backups.
+- `views.js` renders the game, standings, and history and handles navigation.
+- `dropdowns.js` provides the option picker used by the form controls.
 - engine.js: save validation, migration and match rotation
 - engine.test.js: rules and save compatibility checks (`node --test engine.test.js`)
 
